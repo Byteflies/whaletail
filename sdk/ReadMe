@@ -1,0 +1,43 @@
+WhaleTeq SECG(Single Channel ECG System) SDK for Linux platform:
+0. SECG USB connection on Linux:
+   A. "/dev/ttyACM0" would be linked after the SECG device be connected through USB cable:
+   [cloud-user@localhost dev]$ ls -l ttyA*
+   crw-rw----. 1 root dialout 166, 0 Feb 21 09:57 ttyACM0
+
+   B. Add user account into "dialout" group to grant access permission for "/dev/ttyACM0":
+   [cloud-user@localhost dev]$ cat ttyACM0
+   cat: ttyACM0: Permission denied
+   [cloud-user@localhost dev]$ sudo "usermod -a -G dialout cloud-user"
+   [cloud-user@localhost dev]$ cat ttyACM0
+
+1. Build Environment:
+   Linux version : 3.10.0-1160.el7.x86_64
+   gcc version : 4.8.5
+
+2. Package Structure under "WhaleTeqSECG_SDK_*_Linux":
+   Header : /SDK/WhaleTeqSECG_SDK.h
+   32 bits library : /SDK/libsecgx86.so
+   64 bits library : /SDK/libsecgx64.so
+   Raspberry PI 32 bits library : /SDK/libsecgrpi32.so
+   Raspberry PI 64 bits library : /SDK/libsecgrpi64.so
+
+3. Compiler Defined (-D) for WhaleTeqSECG_SDK.h : LINUX_GCC
+#ifdef WHALETEQSECG_SDK_EXPORTS
+#  ifdef LINUX_GCC
+#    define WHALETEQSECG_SDK_API __attribute__ ((visibility ("default"))) 
+#  else
+#    define WHALETEQSECG_SDK_API __declspec(dllexport) 
+#  endif
+#else
+#  if defined(LINUX_GCC) || defined(ANDROID)
+#    define WHALETEQSECG_SDK_API
+#  else
+#    define WHALETEQSECG_SDK_API __declspec(dllimport) 
+#  endif
+#endif
+
+4. Thread for "TimeAmplitudeCB" :
+   WHALETEQSECG_SDK_API void RegisterTimeAmpCB(TimeAmplitudeCB cb);
+The callback would be triggered from another thread. Please take care the GUI thread limitation if do GUI drawing in "TimeAmplitudeCB" for output signal display.
+
+

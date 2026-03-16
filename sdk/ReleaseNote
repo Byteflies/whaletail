@@ -1,0 +1,11 @@
+Version: 5.9.1
+Date: 2020/12/10
+Note:
+    1. Support Raspberry PI 32 / 64 bits library.
+    2. Solve InitSECG() failure on Ubutu 20.x platform.
+
+Version: 5.8.3
+Date: 2020/10/16
+Note:
+    1. Fix native Ubuntu 18.04 InitSECG() failure on Lenovo notebook.
+    2. Support device USB connection through ttyACM?(0 ~ 9).
