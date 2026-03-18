@@ -109,10 +109,10 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    printf("Outputting %s wave at %.2f Hz and %.2f mV amplitude. Press Ctrl+C to stop.\n", argv[1], frequency, amplitude);
     while(1) {
         sleep(1);
     }
-    // Do something else...
 
     CloseSECG();
     return 0;
