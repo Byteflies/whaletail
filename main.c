@@ -46,23 +46,36 @@ static int parse_wave_shape(const char* name, OutputFunction_E* out_wave_shape)
     return 1;
 }
 
+void usage(const char* prog_name) {
+    fprintf(stderr, "Usage: %s <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duration>]\n", prog_name);
+    fprintf(stderr, "Example: %s sine 1.0 1.0 pace 60 1.0 0.5\n", prog_name);
+    fprintf(stderr, "Supported wave shapes: off, sine, triangle, square, rectanglepulse, trianglepulse, exponential, ecg2_27, iec227w, iec251w, jjg1041, jjg1041_hr, jjg_hysteresis, ecg_file\n");
+    fprintf(stderr, "Frequency unit: Hz, Amplitude unit: mV, Pacing BPM: beats per minute, Pacing Amplitude: mV, Pacing Duration: ms\n");
+}
 
 int main(int argc, char* argv[])
 {
     OutputFunction_E wave_shape;
     double frequency;
     double amplitude;
+    /* optional variables */
+    bool pace_on = false;
+    unsigned pace_bpm = DefaultPacingRate;
+    double pace_amp = 0.0;
+    double pace_duration = DefaultPacingDuration;
+
+
     char* endptr = NULL;
 
-    if (argc != 4) {
-        fprintf(stderr, "Usage: %s <wave_shape> <frequency> <amplitude>\n", argv[0]);
-        fprintf(stderr, "Example: %s sine 1.0 1.0\n", argv[0]);
-        fprintf(stderr, "Supported wave shapes: off, sine, triangle, square, rectanglepulse, trianglepulse, exponential, ecg2_27, iec227w, iec251w, jjg1041, jjg1041_hr, jjg_hysteresis, ecg_file\n");
+
+    if (argc < 4) {
+        usage(argv[0]);
         return 1;
     }
 
     if (!parse_wave_shape(argv[1], &wave_shape)) {
         fprintf(stderr, "Invalid wave shape: %s\n", argv[1]);
+        usage(argv[0]);
         return 1;
     }
 
@@ -70,6 +83,7 @@ int main(int argc, char* argv[])
     frequency = strtod(argv[2], &endptr);
     if (argv[2][0] == '\0' || endptr == argv[2] || *endptr != '\0') {
         fprintf(stderr, "Invalid frequency: %s\n", argv[2]);
+        usage(argv[0]);
         return 1;
     }
 
@@ -77,8 +91,52 @@ int main(int argc, char* argv[])
     amplitude = strtod(argv[3], &endptr);
     if (argv[3][0] == '\0' || endptr == argv[3] || *endptr != '\0') {
         fprintf(stderr, "Invalid amplitude: %s\n", argv[3]);
+        usage(argv[0]);
         return 1;
     }
+
+    /* if argc > 4, it has to be 8 and argv[4] must be "pace" */
+    if (argc > 4 && argc != 8) {
+        usage(argv[0]);
+        return 1;
+    }
+
+    if (argc == 8) {
+        if (strcasecmp(argv[4], "pace") != 0) {
+            fprintf(stderr, "Invalid argument: %s\n", argv[4]);
+            usage(argv[0]);
+            return 1;
+        }
+
+        pace_on = true;
+
+
+        endptr = NULL;
+        pace_bpm = strtoul(argv[5], &endptr, 10);
+        if (argv[5][0] == '\0' || endptr == argv[5] || *endptr != '\0') {
+            fprintf(stderr, "Invalid pacing BPM: %s\n", argv[5]);
+            usage(argv[0]);
+            return 1;
+        }
+
+        endptr = NULL;
+        pace_amp = strtod(argv[6], &endptr);
+        if (argv[6][0] == '\0' || endptr == argv[6] || *endptr != '\0') {
+            fprintf(stderr, "Invalid pacing amplitude: %s\n", argv[6]);
+            usage(argv[0]);
+            return 1;
+        }
+
+
+        endptr = NULL;
+        pace_duration = strtod(argv[7], &endptr);
+        if (argv[7][0] == '\0' || endptr == argv[7] || *endptr != '\0') {
+            fprintf(stderr, "Invalid pacing duration: %s\n", argv[7]);
+            usage(argv[0]);
+            return 1;
+        }
+    }
+
 
     if (!InitSECG()) {
         fprintf(stderr, "InitSECG failed\n");
@@ -91,7 +149,7 @@ int main(int argc, char* argv[])
     SetOutputLead(Lead_V3, true);
 
 
-    if (SetOutputFunc(wave_shape) != 0) {
+    if (SetOutputFunc(Output_Off) != 0) {
         fprintf(stderr, "SetOutputFunc failed\n");
         CloseSECG();
         return 1;
@@ -105,6 +163,33 @@ int main(int argc, char* argv[])
 
     if (SetAmplitude(amplitude) != 0) {
         fprintf(stderr, "SetAmplitude failed for value: %s\n", argv[3]);
+        CloseSECG();
+        return 1;
+    }
+
+    if(pace_on)
+    {
+        if (SetPacingRate(pace_bpm) != 0) {
+            fprintf(stderr, "SetPacingRate failed for value: %s\n", argv[5]);
+            CloseSECG();
+            return 1;
+        }
+
+        if (SetPacingAmplitude(pace_amp) != 0) {
+            fprintf(stderr, "SetPacingAmplitude failed for value: %s\n", argv[6]);
+            CloseSECG();
+            return 1;
+        }
+
+        if (SetPacingDuration(pace_duration) != 0) {
+            fprintf(stderr, "SetPacingDuration failed for value: %s\n", argv[7]);
+            CloseSECG();
+            return 1;
+        }
+    }
+
+    if (SetOutputFunc(wave_shape) != 0) {
+        fprintf(stderr, "SetOutputFunc failed\n");
         CloseSECG();
         return 1;
     }
