@@ -1,9 +1,10 @@
 CXX=g++
 CFLAGS=-DLINUX_GCC
 OBJS=main.o
-LIBARM64=sdk/libsecgrpi64.so
-LIBX64=sdk/libsecgx64.so
-LIBARM32=sdk/libsecgrpi32.so
+SDKDIR=sdk
+LIBARM64=secgrpi64
+LIBX64=secgx64
+LIBARM32=secgrpi32
 # auto select lib according to host architecture
 UNAME_M := $(shell uname -m)
 ifeq ($(UNAME_M),x86_64)
@@ -19,13 +20,14 @@ else ifeq ($(UNAME_M),armv6l)
 else
 	$(error Unsupported architecture $(UNAME_M))
 endif
+LDFLAGS=-Wl,--enable-new-dtags,-rpath,'$$ORIGIN/$(SDKDIR)' -L$(SDKDIR)
 BIN=whaletail
-DEPS=sdk/WhaleTeqSECG_SDK.h
+DEPS=$(SDKDIR)/WhaleTeqSECG_SDK.h
 
 all: $(BIN)
 
 $(BIN): $(OBJS) $(DEPS)
-	$(CXX) -o $@ $(OBJS) $(LIB) $(CFLAGS)
+	$(CXX) -o $@ $(OBJS) $(LDFLAGS) -l$(LIB) $(CFLAGS)
 
 $(OBJS): %.o: %.c $(DEPS)
 	$(CXX) -c -o $@ $< $(CFLAGS)
