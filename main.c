@@ -47,9 +47,10 @@ static int parse_wave_shape(const char* name, OutputFunction_E* out_wave_shape)
 }
 
 void usage(const char* prog_name) {
-    fprintf(stderr, "Usage: %s <wave_shape> <frequency> <amplitude>\n", prog_name);
-    fprintf(stderr, "Example: %s sine 1.0 1.0\n", prog_name);
+    fprintf(stderr, "Usage: %s <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duration>]\n", prog_name);
+    fprintf(stderr, "Example: %s sine 1.0 1.0 pace 60 1.0 0.5\n", prog_name);
     fprintf(stderr, "Supported wave shapes: off, sine, triangle, square, rectanglepulse, trianglepulse, exponential, ecg2_27, iec227w, iec251w, jjg1041, jjg1041_hr, jjg_hysteresis, ecg_file\n");
+    fprintf(stderr, "Frequency unit: Hz, Amplitude unit: mV, Pacing BPM: beats per minute, Pacing Amplitude: mV, Pacing Duration: ms\n");
 }
 
 int main(int argc, char* argv[])
