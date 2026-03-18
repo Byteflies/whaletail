@@ -1,4 +1,4 @@
-CC=g++
+CXX=g++
 CFLAGS=-DLINUX_GCC
 OBJS=main.o
 LIBARM64=sdk/libsecgrpi64.so
@@ -25,4 +25,7 @@ DEPS=sdk/WhaleTeqSECG_SDK.h
 all: $(BIN)
 
 $(BIN): $(OBJS) $(DEPS)
-	$(CC) -o $@ $(OBJS) $(LIB) $(CFLAGS)
+	$(CXX) -o $@ $(OBJS) $(LIB) $(CFLAGS)
+
+$(OBJS): %.o: %.c $(DEPS)
+	$(CXX) -c -o $@ $< $(CFLAGS)
