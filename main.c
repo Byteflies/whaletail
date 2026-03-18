@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 
     if (!InitSECG()) {
         fprintf(stderr, "InitSECG failed\n");
-        return -1;
+        return 1;
     }
 
     ResetSECG();
