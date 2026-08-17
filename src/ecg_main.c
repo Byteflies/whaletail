@@ -1,60 +1,55 @@
 /**
  * Copyright (c) 2026 Byteflies
+ *
+ * whalepulse: drive a WhaleTeq SECG 4.0 single channel ECG system.
  */
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <strings.h>
-#include <unistd.h>
 
-#include "sdk/WhaleTeqSECG_SDK.h"
+#include "WhaleTeqSECG_SDK.h"
 
-static int parse_wave_shape(const char* name, OutputFunction_E* out_wave_shape)
+#include "argparse.h"
+#include "run.h"
+
+static const enum_name wave_shapes[] = {
+    { "off",             Output_Off },
+    { "sine",            Output_Sine },
+    { "triangle",        Output_Triangle },
+    { "square",          Output_Square },
+    { "rectanglepulse",  Output_RectanglePulse },
+    { "rectangle_pulse", Output_RectanglePulse },
+    { "trianglepulse",   Output_TrianglePulse },
+    { "triangle_pulse",  Output_TrianglePulse },
+    { "exponential",     Output_Exponential },
+    { "ecg2_27",         Output_ECG2_27 },
+    { "iec227w",         Output_IEC227W },
+    { "iec251w",         Output_IEC251W },
+    { "jjg1041",         Output_JJG1041 },
+    { "jjg1041_hr",      Output_JJG1041_HR },
+    { "jjg_hysteresis",  Output_JJG_Hysteresis },
+    { "ecg_file",        Output_ECG_File },
+    ENUM_NAME_END
+};
+
+static void usage(const char* prog_name)
 {
-    if (strcasecmp(name, "off") == 0) {
-        *out_wave_shape = Output_Off;
-    } else if (strcasecmp(name, "sine") == 0) {
-        *out_wave_shape = Output_Sine;
-    } else if (strcasecmp(name, "triangle") == 0) {
-        *out_wave_shape = Output_Triangle;
-    } else if (strcasecmp(name, "square") == 0) {
-        *out_wave_shape = Output_Square;
-    } else if (strcasecmp(name, "rectanglepulse") == 0 || strcasecmp(name, "rectangle_pulse") == 0) {
-        *out_wave_shape = Output_RectanglePulse;
-    } else if (strcasecmp(name, "trianglepulse") == 0 || strcasecmp(name, "triangle_pulse") == 0) {
-        *out_wave_shape = Output_TrianglePulse;
-    } else if (strcasecmp(name, "exponential") == 0) {
-        *out_wave_shape = Output_Exponential;
-    } else if (strcasecmp(name, "ecg2_27") == 0) {
-        *out_wave_shape = Output_ECG2_27;
-    } else if (strcasecmp(name, "iec227w") == 0) {
-        *out_wave_shape = Output_IEC227W;
-    } else if (strcasecmp(name, "iec251w") == 0) {
-        *out_wave_shape = Output_IEC251W;
-    } else if (strcasecmp(name, "jjg1041") == 0) {
-        *out_wave_shape = Output_JJG1041;
-    } else if (strcasecmp(name, "jjg1041_hr") == 0) {
-        *out_wave_shape = Output_JJG1041_HR;
-    } else if (strcasecmp(name, "jjg_hysteresis") == 0) {
-        *out_wave_shape = Output_JJG_Hysteresis;
-    } else if (strcasecmp(name, "ecg_file") == 0) {
-        *out_wave_shape = Output_ECG_File;
-    } else {
-        return 0;
-    }
-
-    return 1;
-}
-
-void usage(const char* prog_name) {
     fprintf(stderr, "Usage: %s <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duration>]\n", prog_name);
     fprintf(stderr, "Example: %s sine 1.0 1.0 pace 60 1.0 0.5\n", prog_name);
-    fprintf(stderr, "Supported wave shapes: off, sine, triangle, square, rectanglepulse, trianglepulse, exponential, ecg2_27, iec227w, iec251w, jjg1041, jjg1041_hr, jjg_hysteresis, ecg_file\n");
+    fprintf(stderr, "Supported wave shapes: ");
+    print_enum_names(stderr, wave_shapes);
+    fprintf(stderr, "\n");
     fprintf(stderr, "Frequency unit: Hz, Amplitude unit: mV, Pacing BPM: beats per minute, Pacing Amplitude: mV, Pacing Duration: ms\n");
+}
+
+static void shutdown_device(void)
+{
+    CloseSECG();
 }
 
 int main(int argc, char* argv[])
 {
+    int wave_shape_value;
     OutputFunction_E wave_shape;
     double frequency;
     double amplitude;
@@ -64,32 +59,25 @@ int main(int argc, char* argv[])
     double pace_amp = 0.0;
     double pace_duration = DefaultPacingDuration;
 
-
-    char* endptr = NULL;
-
-
     if (argc < 4) {
         usage(argv[0]);
         return 1;
     }
 
-    if (!parse_wave_shape(argv[1], &wave_shape)) {
+    if (!parse_enum(wave_shapes, argv[1], &wave_shape_value)) {
         fprintf(stderr, "Invalid wave shape: %s\n", argv[1]);
         usage(argv[0]);
         return 1;
     }
+    wave_shape = (OutputFunction_E)wave_shape_value;
 
-    endptr = NULL;
-    frequency = strtod(argv[2], &endptr);
-    if (argv[2][0] == '\0' || endptr == argv[2] || *endptr != '\0') {
+    if (!parse_double(argv[2], &frequency)) {
         fprintf(stderr, "Invalid frequency: %s\n", argv[2]);
         usage(argv[0]);
         return 1;
     }
 
-    endptr = NULL;
-    amplitude = strtod(argv[3], &endptr);
-    if (argv[3][0] == '\0' || endptr == argv[3] || *endptr != '\0') {
+    if (!parse_double(argv[3], &amplitude)) {
         fprintf(stderr, "Invalid amplitude: %s\n", argv[3]);
         usage(argv[0]);
         return 1;
@@ -110,33 +98,24 @@ int main(int argc, char* argv[])
 
         pace_on = true;
 
-
-        endptr = NULL;
-        pace_bpm = strtoul(argv[5], &endptr, 10);
-        if (argv[5][0] == '\0' || endptr == argv[5] || *endptr != '\0') {
+        if (!parse_unsigned(argv[5], &pace_bpm)) {
             fprintf(stderr, "Invalid pacing BPM: %s\n", argv[5]);
             usage(argv[0]);
             return 1;
         }
 
-        endptr = NULL;
-        pace_amp = strtod(argv[6], &endptr);
-        if (argv[6][0] == '\0' || endptr == argv[6] || *endptr != '\0') {
+        if (!parse_double(argv[6], &pace_amp)) {
             fprintf(stderr, "Invalid pacing amplitude: %s\n", argv[6]);
             usage(argv[0]);
             return 1;
         }
 
-
-        endptr = NULL;
-        pace_duration = strtod(argv[7], &endptr);
-        if (argv[7][0] == '\0' || endptr == argv[7] || *endptr != '\0') {
+        if (!parse_double(argv[7], &pace_duration)) {
             fprintf(stderr, "Invalid pacing duration: %s\n", argv[7]);
             usage(argv[0]);
             return 1;
         }
     }
-
 
     if (!InitSECG()) {
         fprintf(stderr, "InitSECG failed\n");
@@ -147,7 +126,6 @@ int main(int argc, char* argv[])
     SetOutputLead(Lead_RA, false);
     SetOutputLead(Lead_LA, true);
     SetOutputLead(Lead_V3, true);
-
 
     if (SetOutputFunc(Output_Off) != 0) {
         fprintf(stderr, "SetOutputFunc failed\n");
@@ -167,8 +145,7 @@ int main(int argc, char* argv[])
         return 1;
     }
 
-    if(pace_on)
-    {
+    if (pace_on) {
         if (SetPacingRate(pace_bpm) != 0) {
             fprintf(stderr, "SetPacingRate failed for value: %s\n", argv[5]);
             CloseSECG();
@@ -195,10 +172,7 @@ int main(int argc, char* argv[])
     }
 
     printf("Outputting %s wave at %.2f Hz and %.2f mV amplitude. Press Ctrl+C to stop.\n", argv[1], frequency, amplitude);
-    while(1) {
-        sleep(1);
-    }
+    run_until_interrupted(shutdown_device);
 
-    CloseSECG();
     return 0;
 }
