@@ -8,6 +8,7 @@
 #define ARGPARSE_H
 
 #include <stdio.h>
+#include <stddef.h>
 
 /**
  * Parse a decimal number. The whole string must be consumed, so trailing
@@ -44,6 +45,23 @@ typedef struct {
  * @return 1 on success, 0 if the name is not in the table.
  */
 int parse_enum(const enum_name* table, const char* name, int* out);
+
+/**
+ * Parse a comma separated list of names from table into a set of flags, for
+ * options that select several of something at once. Values in table are used
+ * as indices into flags, so they must all be in [0, flags_size).
+ *
+ * Repeating a name is harmless. An empty list is an error, since every caller
+ * so far needs at least one entry selected.
+ *
+ * @param[out] flags           flags_size ints, zeroed and then set to 1 for
+ *                             each name present in text
+ * @param[out] bad_token       on failure, receives the token that did not parse
+ * @return the number of names parsed, or -1 on failure
+ */
+int parse_enum_set(const enum_name* table, const char* text,
+                   int* flags, int flags_size,
+                   char* bad_token, size_t bad_token_size);
 
 /** Print every name in table as a comma separated list, without a newline. */
 void print_enum_names(FILE* stream, const enum_name* table);

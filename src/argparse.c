@@ -3,6 +3,7 @@
  */
 
 #include <stdlib.h>
+#include <string.h>
 #include <strings.h>
 
 #include "argparse.h"
@@ -55,6 +56,47 @@ int parse_enum(const enum_name* table, const char* name, int* out)
     }
 
     return 0;
+}
+
+int parse_enum_set(const enum_name* table, const char* text,
+                   int* flags, int flags_size,
+                   char* bad_token, size_t bad_token_size)
+{
+    char buffer[256];
+    char* saveptr = NULL;
+    char* token;
+    int count = 0;
+    int i;
+
+    if (strlen(text) >= sizeof(buffer)) {
+        snprintf(bad_token, bad_token_size, "%s", text);
+        return -1;
+    }
+    snprintf(buffer, sizeof(buffer), "%s", text);
+
+    for (i = 0; i < flags_size; i++) {
+        flags[i] = 0;
+    }
+
+    for (token = strtok_r(buffer, ",", &saveptr); token != NULL;
+         token = strtok_r(NULL, ",", &saveptr)) {
+        int value;
+
+        if (!parse_enum(table, token, &value) || value < 0 || value >= flags_size) {
+            snprintf(bad_token, bad_token_size, "%s", token);
+            return -1;
+        }
+
+        flags[value] = 1;
+        count++;
+    }
+
+    if (count == 0) {
+        snprintf(bad_token, bad_token_size, "%s", text);
+        return -1;
+    }
+
+    return count;
 }
 
 void print_enum_names(FILE* stream, const enum_name* table)

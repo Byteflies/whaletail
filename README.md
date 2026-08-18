@@ -60,7 +60,7 @@ Output leads are fixed: RA off, LA and V3 on.
 ### whalewave (EEG)
 
 ```
-whalewave <wave_shape> <frequency> <amplitude>
+whalewave <wave_shape> <frequency> <amplitude> [channels <ch>[,<ch>...]]
 ```
 
 | Argument | Unit / values |
@@ -68,13 +68,22 @@ whalewave <wave_shape> <frequency> <amplitude>
 | `wave_shape` | `off`, `sine`, `triangle`, `square`, `rectanglepulse`, `trianglepulse`, `hysteresis`, `playwaveform` |
 | `frequency` | Hz, 0.05–500 (0.05–5 for the pulse shapes) |
 | `amplitude` | µV, −2000 to 2000 |
+| `channels` | any of `ch1`–`ch9`, comma separated; defaults to `ch1` |
 
 ```sh
-./whalewave sine 10.0 100.0                  # 10 Hz, 100 µV sine
+./whalewave sine 10.0 100.0                    # 10 Hz, 100 µV sine on ch1
+./whalewave sine 10.0 100.0 channels ch1,ch2   # ...on ch1 and ch2 at once
 ```
 
-The output channel is the SDK default, Ch1 only. The device is selected
-automatically with a 5 second connection timeout.
+The device has one generator feeding a relay matrix, so every selected channel
+carries the **identical** signal — which is what makes a two-channel test
+possible. Channels not listed are switched off explicitly, so the selection does
+not depend on how the device was last left.
+
+Only `ch1`–`ch9` can output a waveform. The remaining breakout-box terminals,
+Ch10–Ch22, are tied to ground (D15 pin 4) and are rejected as arguments.
+
+The device is selected automatically with a 5 second connection timeout.
 
 ### Not yet exposed
 
