@@ -2,6 +2,10 @@
  * Copyright (c) 2026 Byteflies
  */
 
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <math.h>
 #include <stdlib.h>
 #include <string.h>
 #include <strings.h>
@@ -17,8 +21,15 @@ int parse_double(const char* text, double* out)
         return 0;
     }
 
+    errno = 0;
     value = strtod(text, &endptr);
     if (endptr == text || *endptr != '\0') {
+        return 0;
+    }
+
+    /* strtod() reports overflow and underflow through ERANGE, and happily
+       accepts "inf" and "nan", none of which are a usable signal parameter. */
+    if (errno == ERANGE || !isfinite(value)) {
         return 0;
     }
 
@@ -28,6 +39,7 @@ int parse_double(const char* text, double* out)
 
 int parse_unsigned(const char* text, unsigned* out)
 {
+    const char* first = text;
     char* endptr = NULL;
     unsigned long value;
 
@@ -35,8 +47,24 @@ int parse_unsigned(const char* text, unsigned* out)
         return 0;
     }
 
+    /* strtoul() accepts a leading minus sign and wraps the result, so "-1"
+       would otherwise parse as UINT_MAX rather than being rejected. */
+    while (isspace((unsigned char)*first)) {
+        first++;
+    }
+    if (*first == '-') {
+        return 0;
+    }
+
+    errno = 0;
     value = strtoul(text, &endptr, 10);
     if (endptr == text || *endptr != '\0') {
+        return 0;
+    }
+
+    /* ERANGE catches overflow of unsigned long; the comparison catches the
+       narrowing to unsigned, which is half as wide on LP64. */
+    if (errno == ERANGE || value > UINT_MAX) {
         return 0;
     }
 

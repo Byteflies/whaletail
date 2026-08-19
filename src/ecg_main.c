@@ -102,9 +102,6 @@ int main(int argc, char* argv[])
     unsigned pace_bpm = DefaultPacingRate;
     double pace_amp = 0.0;
     double pace_duration = DefaultPacingDuration;
-    const char* pace_bpm_text = NULL;
-    const char* pace_amp_text = NULL;
-    const char* pace_duration_text = NULL;
     /* RA, LL and V1 to V6 off; LA and V3 on */
     int lead_on[LeadCount] = { 0, 1, 0, 0, 0, 1, 0, 0, 0 };
     int i;
@@ -145,24 +142,21 @@ int main(int argc, char* argv[])
             }
 
             pace_on = true;
-            pace_bpm_text = argv[i + 1];
-            pace_amp_text = argv[i + 2];
-            pace_duration_text = argv[i + 3];
 
-            if (!parse_unsigned(pace_bpm_text, &pace_bpm)) {
-                fprintf(stderr, "Invalid pacing BPM: %s\n", pace_bpm_text);
+            if (!parse_unsigned(argv[i + 1], &pace_bpm)) {
+                fprintf(stderr, "Invalid pacing BPM: %s\n", argv[i + 1]);
                 usage(argv[0]);
                 return 1;
             }
 
-            if (!parse_double(pace_amp_text, &pace_amp)) {
-                fprintf(stderr, "Invalid pacing amplitude: %s\n", pace_amp_text);
+            if (!parse_double(argv[i + 2], &pace_amp)) {
+                fprintf(stderr, "Invalid pacing amplitude: %s\n", argv[i + 2]);
                 usage(argv[0]);
                 return 1;
             }
 
-            if (!parse_double(pace_duration_text, &pace_duration)) {
-                fprintf(stderr, "Invalid pacing duration: %s\n", pace_duration_text);
+            if (!parse_double(argv[i + 3], &pace_duration)) {
+                fprintf(stderr, "Invalid pacing duration: %s\n", argv[i + 3]);
                 usage(argv[0]);
                 return 1;
             }
@@ -216,32 +210,32 @@ int main(int argc, char* argv[])
     }
 
     if (SetFrequency(frequency) != 0) {
-        fprintf(stderr, "SetFrequency failed for value: %s\n", argv[2]);
+        fprintf(stderr, "SetFrequency failed for value: %.2f Hz\n", frequency);
         CloseSECG();
         return 1;
     }
 
     if (SetAmplitude(amplitude) != 0) {
-        fprintf(stderr, "SetAmplitude failed for value: %s\n", argv[3]);
+        fprintf(stderr, "SetAmplitude failed for value: %.2f mV\n", amplitude);
         CloseSECG();
         return 1;
     }
 
     if (pace_on) {
         if (SetPacingRate(pace_bpm) != 0) {
-            fprintf(stderr, "SetPacingRate failed for value: %s\n", pace_bpm_text);
+            fprintf(stderr, "SetPacingRate failed for value: %u bpm\n", pace_bpm);
             CloseSECG();
             return 1;
         }
 
         if (SetPacingAmplitude(pace_amp) != 0) {
-            fprintf(stderr, "SetPacingAmplitude failed for value: %s\n", pace_amp_text);
+            fprintf(stderr, "SetPacingAmplitude failed for value: %.2f mV\n", pace_amp);
             CloseSECG();
             return 1;
         }
 
         if (SetPacingDuration(pace_duration) != 0) {
-            fprintf(stderr, "SetPacingDuration failed for value: %s\n", pace_duration_text);
+            fprintf(stderr, "SetPacingDuration failed for value: %.2f ms\n", pace_duration);
             CloseSECG();
             return 1;
         }

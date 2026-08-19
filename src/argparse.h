@@ -12,7 +12,8 @@
 
 /**
  * Parse a decimal number. The whole string must be consumed, so trailing
- * garbage ("1.0mV") is rejected rather than silently truncated.
+ * garbage ("1.0mV") is rejected rather than silently truncated. Values that
+ * overflow or underflow a double are rejected, as are "inf" and "nan".
  *
  * @return 1 on success, 0 on failure. *out is untouched on failure.
  */
@@ -20,7 +21,8 @@ int parse_double(const char* text, double* out);
 
 /**
  * Parse a decimal unsigned integer. As with parse_double(), the whole string
- * must be consumed.
+ * must be consumed. Negative values and values too large for an unsigned are
+ * rejected rather than wrapping.
  *
  * @return 1 on success, 0 on failure. *out is untouched on failure.
  */

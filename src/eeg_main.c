@@ -156,13 +156,13 @@ int main(int argc, char* argv[])
     }
 
     if (SetFrequency(frequency) != 0) {
-        fprintf(stderr, "SetFrequency failed for value: %s\n", argv[2]);
+        fprintf(stderr, "SetFrequency failed for value: %.2f Hz\n", frequency);
         Close();
         return 1;
     }
 
     if (SetAmplitude(amplitude) != 0) {
-        fprintf(stderr, "SetAmplitude failed for value: %s\n", argv[3]);
+        fprintf(stderr, "SetAmplitude failed for value: %.2f uV\n", amplitude);
         Close();
         return 1;
     }
