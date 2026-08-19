@@ -38,7 +38,7 @@ interrupted, at which point the device is closed cleanly.
 ### whalepulse (ECG)
 
 ```
-whalepulse <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duration>]
+whalepulse <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duration>] [leads <lead>[,<lead>...]]
 ```
 
 | Argument | Unit / values |
@@ -49,13 +49,21 @@ whalepulse <wave_shape> <frequency> <amplitude> [pace <bpm> <amplitude> <duratio
 | `bpm` | beats per minute |
 | pacing `amplitude` | mV |
 | pacing `duration` | ms |
+| `leads` | any of `ra`/`r`, `la`/`l`, `ll`/`f`, `v1`–`v6`, comma separated; defaults to `la,v3` |
 
 ```sh
-./whalepulse sine 1.0 1.0                    # 1 Hz, 1 mV sine
-./whalepulse sine 1.0 1.0 pace 60 1.0 0.5    # ...with a 60 bpm pacing pulse
+./whalepulse sine 1.0 1.0                       # 1 Hz, 1 mV sine on la and v3
+./whalepulse sine 1.0 1.0 pace 60 1.0 0.5       # ...with a 60 bpm pacing pulse
+./whalepulse sine 1.0 1.0 leads ra,la           # ...on ra and la instead
 ```
 
-Output leads are fixed: RA off, LA and V3 on.
+Both optional groups may be given in either order.
+
+The SECG is a single channel system — the SDK exposes one shape, frequency and
+amplitude for the whole device — so every enabled lead necessarily carries the
+**identical** signal. Leads not listed are switched off explicitly. The default
+`la,v3` is the selection this tool has always applied; pass `leads` to override
+it.
 
 ### whalewave (EEG)
 
